@@ -1,0 +1,19 @@
+@" 
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates 
+[Bb]in/
+[Oo]bj/
+Debug*/
+Release*/ 
+.vscode/
+.idea/  
+.dart_tool/
+.packages
+build/ 
+*.vsidx
+"@ | Out-File -FilePath .gitignore -Encoding utf8 -Append
+/FlutterMessaging.State/database/.env
+/FlutterMessaging.API/.env
