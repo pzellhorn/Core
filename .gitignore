@@ -17,3 +17,4 @@ build/
 "@ | Out-File -FilePath .gitignore -Encoding utf8 -Append
 /FlutterMessaging.State/database/.env
 /FlutterMessaging.API/.env
+/src/pzellhorn.Core.State/Secrets
