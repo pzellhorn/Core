@@ -10,7 +10,7 @@ public partial class BaseDbContext : DbContext
         modelBuilder.HasPostgresExtension("pgcrypto");
 
         //grab & load our entities
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BaseDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
 
         OnModelCreatingPartial(modelBuilder);
     }
