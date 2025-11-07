@@ -10,14 +10,13 @@ namespace pzellhorn.Core.ClientAPI.Base
 
         protected virtual string ActionUrl(string action, params (string Key, string? Value)[] query)
         {
-            var baseUrl = $"{BasePath}/{action}";
+            string baseUrl = $"{BasePath}/{action}";
             if (query is null || query.Length == 0) return baseUrl;
 
-            var qs = string.Join("&",
-                query.Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            string queryString = string.Join("&", query.Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
                      .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}"));
 
-            return string.IsNullOrEmpty(qs) ? baseUrl : $"{baseUrl}?{qs}";
+            return string.IsNullOrEmpty(queryString) ? baseUrl : $"{baseUrl}?{queryString}";
         }
 
         public Task<TRes?> Get(Guid id, CancellationToken cancellationToken = default)

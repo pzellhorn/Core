@@ -55,6 +55,45 @@ namespace pzellhorn.Core.State.Base
             return query.SingleOrDefaultAsync(pred, cancellationToken);
         }
 
+        public static Task<List<T>> GetForMany<T, TProp>(
+         this DbContext db,
+         IEnumerable<TProp> keys,
+         Expression<Func<T, TProp>> property,
+         bool excludeSoftDelete,
+         CancellationToken cancellationToken = default)
+         where T : class, IIsDeleted
+        {
+            ArgumentNullException.ThrowIfNull(keys);
+            List<TProp> keyList = keys.Distinct().ToList();
+            if (keyList.Count == 0) return Task.FromResult(new List<T>());
+
+            IQueryable<T> query = db.Set<T>();
+            if (!excludeSoftDelete) query = query.IgnoreQueryFilters();
+
+            ParameterExpression param = property.Parameters[0];
+            Expression propBody = property.Body;
+
+            System.Reflection.MethodInfo containsMethod = typeof(Enumerable)
+                .GetMethods()
+                .Single(m => m.Name == nameof(Enumerable.Contains)
+                          && m.GetParameters().Length == 2)
+                .MakeGenericMethod(typeof(TProp));
+
+            ConstantExpression keysExpr = Expression.Constant(keyList, typeof(IEnumerable<TProp>));
+            MethodCallExpression contains = Expression.Call(containsMethod, keysExpr, propBody);
+
+            Expression body = excludeSoftDelete
+                ? Expression.AndAlso(
+                    contains,
+                    Expression.Equal(
+                        Expression.Property(param, nameof(IIsDeleted.IsDeleted)),
+                        Expression.Constant(false)))
+                : contains;
+
+            Expression<Func<T, bool>> pred = Expression.Lambda<Func<T, bool>>(body, param);
+            return query.Where(pred).ToListAsync(cancellationToken);
+        }
+
         public static Task<List<T>> GetFor<T, TKey>(
           this DbContext db,
           TKey key,

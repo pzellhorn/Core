@@ -12,6 +12,8 @@ namespace pzellhorn.Core.State.Base
         public Task<List<T>> GetFor<TKey>(TKey key, Expression<Func<T, TKey>> property, CancellationToken cancellationToken = default, bool excludeSoftDelete = true)
             => db.GetFor(key, property, excludeSoftDelete, cancellationToken);
 
+        public Task<List<T>> GetForMany<TKey>(IEnumerable<TKey> keys, Expression<Func<T, TKey>> property, CancellationToken cancellationToken = default, bool excludeSoftDelete = true)
+           => db.GetForMany(keys, property, excludeSoftDelete, cancellationToken); 
 
         public Task<T> Upsert(T entity, CancellationToken cancellationToken = default)
             => db.Upsert(entity, cancellationToken);
