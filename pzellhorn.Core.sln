@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pzellhorn.Core.Logic", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pzellhorn.Core.State", "src\pzellhorn.Core.State\pzellhorn.Core.State.csproj", "{67A61B9E-8EDD-4076-B8AE-525B2B220D0E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pzellhorn.Core.Messaging", "src\pzellhorn.Core.Messaging\pzellhorn.Core.Messaging.csproj", "{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{67A61B9E-8EDD-4076-B8AE-525B2B220D0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67A61B9E-8EDD-4076-B8AE-525B2B220D0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67A61B9E-8EDD-4076-B8AE-525B2B220D0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
