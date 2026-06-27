@@ -4,22 +4,25 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Options;
 
 namespace pzellhorn.Core.State.Storage.S3
-{ 
+{
     public class S3StorageManager : IStorageManager, ISignedUrlProvider, IDisposable
     {
         private readonly AmazonS3Client _client;
         private readonly string _bucketName;
+        private readonly bool _useHttp;
 
         public S3StorageManager(IOptions<S3Options> options)
         {
             S3Options config = options.Value;
             _bucketName = config.BucketName;
+            _useHttp = config.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
 
             AmazonS3Config clientConfig = new()
             {
                 ServiceURL = config.ServiceUrl,
                 ForcePathStyle = config.ForcePathStyle,
                 AuthenticationRegion = config.Region,
+                UseHttp = _useHttp,
             };
 
             _client = new AmazonS3Client(config.AccessKey, config.SecretKey, clientConfig);
@@ -57,7 +60,7 @@ namespace pzellhorn.Core.State.Storage.S3
         }
 
         public async Task<bool> Delete(string path, CancellationToken cancellationToken = default)
-        { 
+        {
             await _client.DeleteObjectAsync(_bucketName, GetKey(path), cancellationToken);
             return true;
         }
@@ -69,7 +72,7 @@ namespace pzellhorn.Core.State.Storage.S3
                 await _client.GetObjectMetadataAsync(_bucketName, GetKey(path), cancellationToken);
                 return true;
             }
-            catch (AmazonS3Exception ex)  
+            catch (AmazonS3Exception ex)
             {
                 return false;
             }
@@ -109,8 +112,9 @@ namespace pzellhorn.Core.State.Storage.S3
                 Key = GetKey(path),
                 Verb = verb,
                 Expires = DateTime.UtcNow.Add(ttl),
+                Protocol = _useHttp ? Protocol.HTTP : Protocol.HTTPS,
             };
-             
+
             string url = _client.GetPreSignedURL(request);
             return Task.FromResult(new Uri(url));
         }
