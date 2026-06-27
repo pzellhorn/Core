@@ -57,8 +57,16 @@ namespace pzellhorn.Core.Messaging.RabbitMq
                 cancellationToken: cancellationToken);
         }
 
+        /// <summary>
+        /// Consumes from a queue over default exchange
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queue"></param>
+        /// <param name="handler"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<IAsyncDisposable> Subscribe<T>(
-            string source,
+            string queue,
             Func<T, CancellationToken, Task> handler,
             CancellationToken cancellationToken = default)
         {
@@ -66,12 +74,66 @@ namespace pzellhorn.Core.Messaging.RabbitMq
             IChannel channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.QueueDeclareAsync(
-                queue: source, 
-                durable: true, 
-                exclusive: false, 
+                queue: queue,
+                durable: true,
+                exclusive: false,
                 autoDelete: false,
                 cancellationToken: cancellationToken);
 
+            return await Consume(channel, queue, handler, cancellationToken);
+        }
+
+        /// <summary>
+        /// Consumes from a queue over a specified exchange & routing key
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queue"></param>
+        /// <param name="exchange"></param>
+        /// <param name="exchangeType"></param>
+        /// <param name="routingKey"></param>
+        /// <param name="handler"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<IAsyncDisposable> Subscribe<T>(
+            string queue,
+            string exchange,
+            string exchangeType,
+            string routingKey,
+            Func<T, CancellationToken, Task> handler,
+            CancellationToken cancellationToken = default)
+        {
+            IConnection connection = await GetConnectionAsync(cancellationToken);
+            IChannel channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+            await channel.ExchangeDeclareAsync(
+                exchange: exchange,
+                type: exchangeType,
+                durable: true,
+                autoDelete: false,
+                cancellationToken: cancellationToken);
+
+            await channel.QueueDeclareAsync(
+                queue: queue,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                cancellationToken: cancellationToken);
+
+            await channel.QueueBindAsync(
+                queue: queue,
+                exchange: exchange,
+                routingKey: routingKey,
+                cancellationToken: cancellationToken);
+
+            return await Consume(channel, queue, handler, cancellationToken);
+        }
+
+        private async Task<IAsyncDisposable> Consume<T>(
+            IChannel channel,
+            string queue,
+            Func<T, CancellationToken, Task> handler,
+            CancellationToken cancellationToken)
+        {
             AsyncEventingBasicConsumer consumer = new(channel);
             consumer.ReceivedAsync += async (_, ea) =>
             {
@@ -90,7 +152,7 @@ namespace pzellhorn.Core.Messaging.RabbitMq
             };
 
             string consumerTag = await channel.BasicConsumeAsync(
-                queue: source, autoAck: false, consumer: consumer,
+                queue: queue, autoAck: false, consumer: consumer,
                 cancellationToken: cancellationToken);
 
             Subscription subscription = new(channel, consumerTag);

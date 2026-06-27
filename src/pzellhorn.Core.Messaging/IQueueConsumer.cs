@@ -10,6 +10,14 @@ namespace pzellhorn.Core.Messaging
     /// </summary>
     public interface IQueueConsumer
     {
+        /// <summary>
+        /// Consumes from a queue over default exchange
+        /// </summary>
         Task<IAsyncDisposable> Subscribe<T>(string source, Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Consumes from a queue over a specified exchange & routing key
+        /// </summary>
+        Task<IAsyncDisposable> Subscribe<T>(string queue,string exchange,string exchangeType,string routingKey,Func<T, CancellationToken, Task> handler,CancellationToken cancellationToken = default);
     }
 }
