@@ -21,6 +21,14 @@ namespace pzellhorn.Core
         public async Task<ActionResult<List<TRes>>> GetFor(string key, string propertyName, CancellationToken cancellationToken = default)
             => Ok(await logic.GetFor(key, propertyName, cancellationToken));
 
+        [HttpGet(nameof(List))]
+        public async Task<ActionResult<PagedResponse<TRes>>> List(int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 50;
+            return Ok(await logic.List(page, pageSize, cancellationToken));
+        }
+
         [HttpPost(nameof(Upsert))]
         public async Task<ActionResult<TRes>> Upsert([FromBody] TReq request, CancellationToken cancellationToken)
             => Ok(await logic.Upsert(request, cancellationToken));

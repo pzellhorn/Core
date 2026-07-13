@@ -34,6 +34,17 @@ namespace pzellhorn.Core.Logic.Base.DTOAdapter
 
         public Task<bool> Delete(Guid id, CancellationToken cancellationToken = default) => logic.Delete(id, cancellationToken);
 
+        public async Task<PagedResponse<TRes>> List(int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            (List<TEntity> entities, int totalCount) = await logic.List(page, pageSize, cancellationToken);
+
+            List<TRes> items = new();
+            foreach (TEntity entity in entities)
+                items.Add(mapper.ToResponse(entity));
+
+            return new PagedResponse<TRes>(items, totalCount, page, pageSize);
+        }
+
         public async Task<List<TRes>> GetFor(string key, string property, CancellationToken cancellationToken = default)
         {
             PropertyInfo prop = typeof(TEntity).GetProperty(property, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase)

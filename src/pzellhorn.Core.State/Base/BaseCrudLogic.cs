@@ -128,6 +128,43 @@ namespace pzellhorn.Core.State.Base
             return query.Where(pred).ToListAsync(cancellationToken);
         }
 
+        public static async Task<(List<T> Items, int TotalCount)> List<T>(
+            this DbContext db,
+            int page,
+            int pageSize,
+            bool excludeSoftDelete,
+            CancellationToken cancellationToken = default)
+            where T : class, IPrimaryKeySelector<T>, IIsDeleted
+        {
+            IQueryable<T> query = db.Set<T>();
+            if (!excludeSoftDelete)
+                query = query.IgnoreQueryFilters();
+            else
+                query = query.Where(e => !e.IsDeleted);
+
+            int totalCount = await query.CountAsync(cancellationToken);
+
+            IOrderedQueryable<T> ordered;
+            if (typeof(ICreatedAt).IsAssignableFrom(typeof(T)))
+            {
+                ParameterExpression param = Expression.Parameter(typeof(T), "e");
+                Expression<Func<T, DateTime>> createdAt = Expression.Lambda<Func<T, DateTime>>(
+                    Expression.Property(param, nameof(ICreatedAt.CreatedAt)), param);
+                ordered = query.OrderByDescending(createdAt).ThenBy(T.PrimaryKey);
+            }
+            else
+            {
+                ordered = query.OrderBy(T.PrimaryKey);
+            }
+
+            List<T> items = await ordered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return (items, totalCount);
+        }
+
         public static async Task<T> Upsert<T>(
              this DbContext db,
              T incoming,

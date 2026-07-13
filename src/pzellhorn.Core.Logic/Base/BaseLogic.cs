@@ -15,5 +15,8 @@ namespace pzellhorn.Core.Logic.Base
 
         public async Task<List<T>> GetFor<TKey>(TKey key, Expression<Func<T, TKey>> property, CancellationToken cancellationToken = default)
             => await baseRepository.GetFor(key, property, cancellationToken);
+
+        public async Task<(List<T> Items, int TotalCount)> List(int page, int pageSize, CancellationToken cancellationToken = default)
+            => await baseRepository.List(page, pageSize, cancellationToken);
     }
 }
