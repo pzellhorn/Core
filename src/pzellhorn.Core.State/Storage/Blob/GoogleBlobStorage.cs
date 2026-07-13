@@ -59,6 +59,26 @@ namespace pzellhorn.Core.State.Storage.Blob
             }
         }
 
+        public async Task<int> DeleteByPrefix(string prefix, CancellationToken cancellationToken = default)
+        {
+            (string bucket, string objectPrefix) = GetBucketValuesFromPath(prefix);
+            int deleted = 0;
+
+            await foreach (Google.Apis.Storage.v1.Data.Object storageObject in storageClient.ListObjectsAsync(bucket, objectPrefix).WithCancellation(cancellationToken))
+            {
+                try
+                {
+                    await storageClient.DeleteObjectAsync(bucket, storageObject.Name, cancellationToken: cancellationToken);
+                    deleted++;
+                }
+                catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+                {
+                }
+            }
+
+            return deleted;
+        }
+
         public async Task<bool> Exists(string path, CancellationToken cancellationToken = default)
         {
             (string bucket, string objectName) = GetBucketValuesFromPath(path);

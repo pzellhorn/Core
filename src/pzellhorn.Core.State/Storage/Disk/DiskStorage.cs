@@ -39,7 +39,23 @@ namespace pzellhorn.Core.State.Storage.Disk
             return Task.FromResult(true);
         }
 
-        public Task<bool> Exists(string path, CancellationToken cancellationToken = default) 
+        public Task<int> DeleteByPrefix(string prefix, CancellationToken cancellationToken = default)
+        {
+            string full = ResolvePath(prefix);
+            string directory = Path.GetDirectoryName(full)!;
+
+            if (!Directory.Exists(directory))
+                return Task.FromResult(0);
+
+            string leaf = Path.GetFileName(full);
+            string[] matches = Directory.GetFiles(directory, $"{leaf}*", SearchOption.AllDirectories);
+            foreach (string match in matches)
+                File.Delete(match);
+
+            return Task.FromResult(matches.Length);
+        }
+
+        public Task<bool> Exists(string path, CancellationToken cancellationToken = default)
             => Task.FromResult(File.Exists(ResolvePath(path)));
 
         public Task<bool> Copy(string source, string destination, CancellationToken cancellationToken = default)

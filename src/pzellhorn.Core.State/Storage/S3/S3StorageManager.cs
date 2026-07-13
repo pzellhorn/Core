@@ -65,6 +65,42 @@ namespace pzellhorn.Core.State.Storage.S3
             return true;
         }
 
+        public async Task<int> DeleteByPrefix(string prefix, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(prefix))
+                throw new ArgumentException("Prefix must be provided.", nameof(prefix));
+
+            string normalizedPrefix = prefix.TrimStart('/');
+            int deleted = 0;
+            string? continuationToken = null;
+
+            do
+            {
+                ListObjectsV2Response listing = await _client.ListObjectsV2Async(new ListObjectsV2Request
+                {
+                    BucketName = _bucketName,
+                    Prefix = normalizedPrefix,
+                    ContinuationToken = continuationToken,
+                }, cancellationToken);
+
+                if (listing.S3Objects is { Count: > 0 } objects)
+                {
+                    DeleteObjectsResponse deleteResponse = await _client.DeleteObjectsAsync(new DeleteObjectsRequest
+                    {
+                        BucketName = _bucketName,
+                        Objects = objects.Select(o => new KeyVersion { Key = o.Key }).ToList(),
+                    }, cancellationToken);
+
+                    deleted += deleteResponse.DeletedObjects?.Count ?? 0;
+                }
+
+                continuationToken = listing.IsTruncated == true ? listing.NextContinuationToken : null;
+            }
+            while (continuationToken is not null);
+
+            return deleted;
+        }
+
         public async Task<bool> Exists(string path, CancellationToken cancellationToken = default)
         {
             try
