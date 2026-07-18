@@ -37,6 +37,7 @@ namespace pzellhorn.Core.State.Storage
             services.AddSingleton<S3StorageManager>();
             services.AddSingleton<IStorageManager>(sp => sp.GetRequiredService<S3StorageManager>());
             services.AddSingleton<ISignedUrlProvider>(sp => sp.GetRequiredService<S3StorageManager>());
+            services.AddSingleton<IMultipartStorage>(sp => sp.GetRequiredService<S3StorageManager>());
             return services;
         }
     }

@@ -5,8 +5,10 @@ using Microsoft.Extensions.Options;
 
 namespace pzellhorn.Core.State.Storage.S3
 {
-    public class S3StorageManager : IStorageManager, ISignedUrlProvider, IDisposable
+    public class S3StorageManager : IStorageManager, ISignedUrlProvider, IMultipartStorage, IDisposable
     {
+        public int MinChunkSize => 5 * 1024 * 1024;
+
         private readonly AmazonS3Client _client;
         private readonly string _bucketName;
         private readonly bool _useHttp;
@@ -134,6 +136,62 @@ namespace pzellhorn.Core.State.Storage.S3
                 return false;
 
             return await Delete(source, cancellationToken);
+        }
+
+        public async Task<string> BeginMultipart(string path, CancellationToken cancellationToken = default)
+        {
+            InitiateMultipartUploadResponse response = await _client.InitiateMultipartUploadAsync(new InitiateMultipartUploadRequest
+            {
+                BucketName = _bucketName,
+                Key = GetKey(path),
+                ContentType = "application/octet-stream",
+            }, cancellationToken);
+
+            return response.UploadId;
+        }
+
+        public async Task UploadPart(string path, string multipartUploadId, int partNumber, Stream content, CancellationToken cancellationToken = default)
+        {
+            await _client.UploadPartAsync(new UploadPartRequest
+            {
+                BucketName = _bucketName,
+                Key = GetKey(path),
+                UploadId = multipartUploadId,
+                PartNumber = partNumber,
+                InputStream = content,
+            }, cancellationToken);
+        }
+
+        public async Task CompleteMultipart(string path, string multipartUploadId, CancellationToken cancellationToken = default)
+        {
+            ListPartsResponse parts = await _client.ListPartsAsync(new ListPartsRequest
+            {
+                BucketName = _bucketName,
+                Key = GetKey(path),
+                UploadId = multipartUploadId,
+            }, cancellationToken);
+
+            List<PartETag> etags = new();
+            foreach (PartDetail part in parts.Parts.OrderBy(p => p.PartNumber))
+                etags.Add(new PartETag(part.PartNumber.GetValueOrDefault(), part.ETag));
+
+            await _client.CompleteMultipartUploadAsync(new CompleteMultipartUploadRequest
+            {
+                BucketName = _bucketName,
+                Key = GetKey(path),
+                UploadId = multipartUploadId,
+                PartETags = etags,
+            }, cancellationToken);
+        }
+
+        public async Task AbortMultipart(string path, string multipartUploadId, CancellationToken cancellationToken = default)
+        {
+            await _client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+            {
+                BucketName = _bucketName,
+                Key = GetKey(path),
+                UploadId = multipartUploadId,
+            }, cancellationToken);
         }
 
         public Task<Uri> GetDownloadUrl(string path, TimeSpan ttl, CancellationToken cancellationToken = default) => PreSign(path, HttpVerb.GET, ttl);
