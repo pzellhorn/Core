@@ -3,10 +3,11 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
 
 namespace pzellhorn.Core.Messaging.RabbitMq
 { 
-    public sealed class RabbitMqDistributedQueue : IQueuePublisher, IQueueConsumer, IAsyncDisposable
+    public sealed class RabbitMqDistributedQueue : IQueuePublisher, IQueueConsumer, IQueueInspector, IAsyncDisposable
     {
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
         {
@@ -55,6 +56,22 @@ namespace pzellhorn.Core.Messaging.RabbitMq
                 basicProperties: props,
                 body: body,
                 cancellationToken: cancellationToken);
+        }
+
+        public async Task<QueueDepth> GetDepth(string queue, CancellationToken cancellationToken = default)
+        {
+            IConnection connection = await GetConnectionAsync(cancellationToken);
+            await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+            try
+            {
+                QueueDeclareOk declared = await channel.QueueDeclarePassiveAsync(queue, cancellationToken: cancellationToken);
+                return new QueueDepth(queue, declared.MessageCount, declared.ConsumerCount, true);
+            }
+            catch (OperationInterruptedException)
+            {
+                return new QueueDepth(queue, 0, 0, false);
+            }
         }
 
         /// <summary>

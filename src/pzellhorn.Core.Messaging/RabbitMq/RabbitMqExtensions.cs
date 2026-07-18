@@ -15,6 +15,7 @@ namespace pzellhorn.Core.Messaging.RabbitMq
             services.AddSingleton<RabbitMqDistributedQueue>();
             services.AddSingleton<IQueuePublisher>(sp => sp.GetRequiredService<RabbitMqDistributedQueue>());
             services.AddSingleton<IQueueConsumer>(sp => sp.GetRequiredService<RabbitMqDistributedQueue>());
+            services.AddSingleton<IQueueInspector>(sp => sp.GetRequiredService<RabbitMqDistributedQueue>());
 
             return services;
         }
